@@ -7,7 +7,7 @@ o desde una planilla de Google Sheets, y tableros de control por grupo y subgrup
 
 | Capa | Tecnología |
 |---|---|
-| Frontend | React + Vite, publicado en Cloudflare Pages |
+| Frontend | React + Vite, publicado en Cloudflare (Worker con archivos estáticos) |
 | Sincronización con Google Sheets | Cloudflare Pages Function (la credencial de Google nunca llega al navegador) |
 | Base de datos y login | Supabase (PostgreSQL + Auth + RLS), proyecto exclusivo para esta app |
 | Gráficos | Recharts |
