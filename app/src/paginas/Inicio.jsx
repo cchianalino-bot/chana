@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { hoy, inicioDeMes, nombreMes, pesos } from '../lib/formato.js'
 import SelectorMes from '../componentes/SelectorMes.jsx'
 import { URL_PLANILLA } from '../lib/planilla.js'
+import DesgloseGrupos from '../componentes/DesgloseGrupos.jsx'
 
 export default function Inicio() {
   const [mes, setMes] = useState(inicioDeMes(hoy()))
@@ -14,12 +15,9 @@ export default function Inicio() {
     supabase.from('v_resumen_mensual').select('*').eq('periodo', mes).maybeSingle()
       .then(({ data }) => setResumen(data ?? { ingresos: 0, gastos: 0, inversiones: 0, saldo: 0 }))
 
-    supabase.from('v_totales_por_subgrupo').select('grupo, total').eq('periodo', mes).eq('tipo', 'gasto')
-      .then(({ data }) => {
-        const totales = {}
-        for (const fila of data ?? []) totales[fila.grupo] = (totales[fila.grupo] ?? 0) + Number(fila.total)
-        setPorGrupo(Object.entries(totales).sort((a, b) => b[1] - a[1]))
-      })
+    supabase.from('v_totales_por_subgrupo').select('grupo_id, grupo, subgrupo_id, subgrupo, total')
+      .eq('periodo', mes).eq('tipo', 'gasto')
+      .then(({ data }) => setPorGrupo(data ?? []))
   }, [mes])
 
   useEffect(() => {
@@ -27,7 +25,6 @@ export default function Inicio() {
       .then(({ data }) => setCompromisos(data ?? []))
   }, [])
 
-  const maximo = Math.max(...porGrupo.map(([, total]) => total), 1)
   const compromisosPorMes = {}
   for (const c of compromisos) {
     compromisosPorMes[c.periodo] ??= {}
@@ -56,16 +53,10 @@ export default function Inicio() {
 
       <div className="tarjeta">
         <h3>Gastos por grupo</h3>
-        {porGrupo.length === 0 && <p className="vacio">Sin gastos en {nombreMes(mes)}.</p>}
-        <ul className="barras">
-          {porGrupo.map(([grupo, total]) => (
-            <li key={grupo}>
-              <span className="etiqueta">{grupo}</span>
-              <span className="barra"><span style={{ width: `${(total / maximo) * 100}%` }} /></span>
-              <span className="valor">{pesos(total)}</span>
-            </li>
-          ))}
-        </ul>
+        {porGrupo.length === 0
+          ? <p className="vacio">Sin gastos en {nombreMes(mes)}.</p>
+          : <p className="vacio ayuda">Tocá un grupo para ver sus subgrupos, y un subgrupo para ver los movimientos.</p>}
+        <DesgloseGrupos filas={porGrupo} mes={mes} />
       </div>
 
       <div className="tarjeta">

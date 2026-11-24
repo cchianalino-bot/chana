@@ -194,3 +194,32 @@ progress { width: 100%; height: .8rem; }
 
 .encabezado-acciones { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 a { color: var(--primario); }
+
+/* Desglose de gastos: grupo → subgrupo → movimientos */
+.desglose li { display: block; }
+.desglose .fila-barra {
+  display: grid; grid-template-columns: 11rem 1fr 8.5rem; align-items: center; gap: .6rem;
+  width: 100%; padding: .35rem .25rem; text-align: left;
+  background: transparent; color: var(--texto); border: 0; border-radius: 6px;
+}
+.desglose .fila-barra:hover { background: var(--acento); }
+.desglose .flecha { display: inline-block; width: 1rem; text-align: center; margin-right: .2rem; color: var(--suave); transition: transform .15s; }
+.desglose .fila-barra[aria-expanded="true"] > .etiqueta .flecha { transform: rotate(90deg); }
+.desglose .valor small { display: block; color: var(--suave); font-size: .8rem; }
+.desglose .subniveles { margin: .2rem 0 .5rem 1rem; padding-left: .5rem; border-left: 2px solid var(--borde); }
+.desglose .subniveles .barra span { background: var(--suave); }
+.desglose li.abierto > .fila-barra { font-weight: 600; }
+.detalle-movimientos { list-style: none; margin: .25rem 0 .5rem 1.2rem; padding: 0; }
+.detalle-movimientos a {
+  display: flex; justify-content: space-between; gap: .75rem; padding: .35rem .5rem;
+  color: var(--texto); text-decoration: none; border-radius: 6px; font-size: .92rem;
+}
+.detalle-movimientos a:hover { background: var(--acento); }
+.detalle-movimientos small { display: block; color: var(--suave); }
+.ayuda { font-size: .88rem; margin-top: -.4rem; }
+@media (max-width: 640px) {
+  .desglose .fila-barra { grid-template-columns: 1fr auto; }
+  .desglose .fila-barra .barra { grid-column: 1 / -1; grid-row: 2; }
+  .desglose .subniveles { margin-left: .4rem; }
+  .detalle-movimientos { margin-left: .4rem; }
+}
