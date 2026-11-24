@@ -34,3 +34,20 @@ conectada: guardarlas en Engram en el proyecto indicado y borrarlas de acá.
   y solo las usa código del lado del servidor.
 
 Origen: app de finanzas familiares (repo `chana`), noviembre 2026.
+
+---
+
+## [global] Cloudflare deja de construir los commits nuevos
+
+- Síntoma: los push llegan a GitHub pero en *Deployments* no aparece ningún
+  build nuevo. En *Settings → Builds* se ve el aviso "This project is
+  disconnected from your Git account".
+- Pasó después de cargar un secret y tocar "Deploy" desde el panel.
+- Solución: *Settings → Builds → Disconnect → Connect* (mismo repo y rama) y
+  revisar en GitHub (*Settings → Applications → Cloudflare Workers and Pages →
+  Repository access*) que el repo esté incluido. Reconectar no dispara un
+  build: hace falta un push nuevo (o un deploy manual).
+- Revisar también el **API token** de *Settings → Builds*: cada proyecto con su
+  propio token, no reusar el de otro proyecto o cliente.
+
+Origen: app de finanzas familiares (repo `chana`), noviembre 2026.

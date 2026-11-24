@@ -108,7 +108,8 @@ cuotas, totales y permisos.
 - [x] Esquema y datos iniciales cargados en Supabase
 - [x] Frontend: login, resumen del mes, movimientos, formulario con cuotas
 - [x] Sincronizar desde Google Sheets (vista previa + confirmar)
-- [ ] Cuenta de servicio de Google cargada como secret en Cloudflare
-- [ ] Importar el historial (1.272 movimientos) con Sincronizar
+- [x] Cuenta de servicio de Google cargada como secret en Cloudflare
+- [x] Importar el historial (1.272 movimientos) con Sincronizar
+- [x] Ajustes: CRUD de grupos, subgrupos, medios de pago y personas
 - [ ] Tableros de control
 - [x] Publicar en Cloudflare: https://chana.cchianalino.workers.dev
