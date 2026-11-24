@@ -132,7 +132,7 @@ export default function Sincronizar() {
               <h3>Se van a importar</h3>
               <table>
                 <thead>
-                  <tr><th>Fecha</th><th>Concepto</th><th>Cuotas</th><th>Monto</th></tr>
+                  <tr><th>Fecha</th><th className="texto">Concepto</th><th>Cuotas</th><th>Monto</th></tr>
                 </thead>
                 <tbody>
                   {(verTodas ? nuevas : nuevas.slice(0, MOSTRAR)).map((f) => (
