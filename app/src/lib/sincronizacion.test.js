@@ -20,6 +20,7 @@ const catalogo = {
     { id: 4, nombre: 'TC Meli', tipo: 'tarjeta' },
     { id: 6, nombre: 'Sin especificar', tipo: 'otro' },
   ],
+  personas: [{ id: 1, nombre: 'Meli' }, { id: 2, nombre: 'Carli' }, { id: 3, nombre: 'Ambos' }],
 }
 
 // 46350 = 24/11/2026 en número de serie de Sheets
@@ -84,8 +85,14 @@ test('informa todos los errores de la fila', async () => {
     'Monto inválido',
     'Cuotas debe ser un número entre 1 y 60',
     'Medio de pago "Cheque" no existe',
-    'Quién "Juan" no válido (Meli, Carli o Ambos)',
+    'Quién "Juan" no existe',
   ])
+})
+
+test('quién se compara sin mayúsculas y se guarda como está en personas', async () => {
+  const [r] = await interpretarPlanilla(
+    [[NOV_24, 'Gasto', 'Auto', 'Nafta', 'YPF', 30000, '', '', '', 'MELI']], catalogo)
+  assert.equal(r.registro.quien, 'Meli')
 })
 
 test('dos filas idénticas son dos movimientos con huellas distintas y estables', async () => {

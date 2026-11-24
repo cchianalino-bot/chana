@@ -14,7 +14,7 @@ import { primerPeriodoSugerido } from './cuotas.js'
  */
 
 const TIPOS = { ingreso: 'ingreso', gasto: 'gasto', inversion: 'inversion' }
-const QUIEN = { meli: 'Meli', carli: 'Carli', ambos: 'Ambos' }
+const QUIEN_POR_DEFECTO = 'Ambos'
 
 /** Para comparar nombres sin que importen mayúsculas, tildes ni espacios. */
 export function clave(texto) {
@@ -71,13 +71,14 @@ async function sha256(texto) {
 
 /**
  * Prepara los índices de búsqueda a partir del catálogo de la base
- * (grupos con su tipo, subgrupos y medios de pago).
+ * (grupos con su tipo, subgrupos, medios de pago y personas).
  */
-export function indexarCatalogo({ grupos, subgrupos, medios }) {
+export function indexarCatalogo({ grupos, subgrupos, medios, personas }) {
   const grupoPorNombre = new Map(grupos.map((g) => [clave(g.nombre), g]))
   const subgrupoPorGrupo = new Map(subgrupos.map((s) => [`${s.grupo_id}|${clave(s.nombre)}`, s]))
   const medioPorNombre = new Map(medios.map((m) => [clave(m.nombre), m]))
-  return { grupoPorNombre, subgrupoPorGrupo, medioPorNombre }
+  const personaPorNombre = new Map(personas.map((p) => [clave(p.nombre), p.nombre]))
+  return { grupoPorNombre, subgrupoPorGrupo, medioPorNombre, personaPorNombre }
 }
 
 /**
@@ -113,8 +114,8 @@ export function interpretarFila(fila, indices) {
   const m = clave(medio) ? indices.medioPorNombre.get(clave(medio)) : indices.medioPorNombre.get('sin especificar')
   if (!m) errores.push(`Medio de pago "${medio}" no existe`)
 
-  const quienNormal = clave(quien) ? QUIEN[clave(quien)] : 'Ambos'
-  if (!quienNormal) errores.push(`Quién "${quien}" no válido (Meli, Carli o Ambos)`)
+  const quienNormal = indices.personaPorNombre.get(clave(quien) || clave(QUIEN_POR_DEFECTO))
+  if (!quienNormal) errores.push(clave(quien) ? `Quién "${quien}" no existe` : 'Falta quién')
 
   let primerPeriodo = null
   if (mesCuota !== '' && mesCuota != null) {

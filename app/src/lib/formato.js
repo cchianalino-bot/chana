@@ -43,3 +43,29 @@ export function fechaCorta(fecha) {
 export function nombreMes(fecha) {
   return `${MESES[Number(fecha.slice(5, 7)) - 1]} ${fecha.slice(0, 4)}`
 }
+
+/**
+ * Formatea el monto mientras se escribe, con puntos de miles y coma decimal:
+ * '1234567,5' -> '1.234.567,5'. Los puntos que escribe la persona se ignoran
+ * (son separadores de miles); la coma es la única marca decimal.
+ */
+export function formatearMontoEscrito(texto) {
+  const limpio = String(texto).replace(/[^\d,]/g, '')
+  const [entero, ...resto] = limpio.split(',')
+  const conPuntos = entero.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  if (!limpio.includes(',')) return conPuntos
+  return `${conPuntos || '0'},${resto.join('').slice(0, 2)}`
+}
+
+/** '1.234.567,50' -> 1234567.5 ; '' -> null */
+export function montoEscritoANumero(texto) {
+  const normal = String(texto).replace(/\./g, '').replace(',', '.')
+  if (!normal) return null
+  const n = Number(normal)
+  return Number.isFinite(n) ? n : null
+}
+
+/** 45230.5 -> '45.230,50' (para cargar un monto guardado en el formulario) */
+export function numeroAMontoEscrito(numero) {
+  return formatearMontoEscrito(Number(numero).toFixed(2).replace('.', ','))
+}

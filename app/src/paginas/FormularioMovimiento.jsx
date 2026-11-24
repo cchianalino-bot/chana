@@ -4,13 +4,16 @@ import { supabase } from '../lib/supabase.js'
 import { useSesion } from '../lib/sesion.jsx'
 import { useCatalogo } from '../lib/useCatalogo.js'
 import { calcularCuotas, primerPeriodoSugerido } from '../lib/cuotas.js'
-import { hoy, nombreMes, pesos } from '../lib/formato.js'
+import { formatearMontoEscrito, hoy, montoEscritoANumero, nombreMes, numeroAMontoEscrito, pesos } from '../lib/formato.js'
+import Buscador from '../componentes/Buscador.jsx'
 
-const TIPOS = [
-  { valor: 'gasto', etiqueta: 'Gasto' },
-  { valor: 'ingreso', etiqueta: 'Ingreso' },
-  { valor: 'inversion', etiqueta: 'Inversión' },
-]
+// Lo que cambia según el tipo: título y cómo se llama el medio de pago.
+// Con ingresos e inversiones no se ofrecen tarjetas (y por lo tanto, tampoco cuotas).
+const TIPOS = {
+  gasto:     { etiqueta: 'Gasto',     titulo: 'gasto',     medio: 'Medio de pago', conTarjeta: true },
+  ingreso:   { etiqueta: 'Ingreso',   titulo: 'ingreso',   medio: 'Cobrado en',    conTarjeta: false },
+  inversion: { etiqueta: 'Inversión', titulo: 'inversión', medio: 'Desde / hacia', conTarjeta: false },
+}
 
 const VACIO = {
   tipo: 'gasto',
@@ -18,14 +21,14 @@ const VACIO = {
   grupoId: '',
   subgrupoId: '',
   concepto: '',
-  monto: '',
+  monto: '',          // texto con formato, ej. '1.234,50'
   sentidoInversion: 'sale', // 'sale' = se invierte, 'vuelve' = rescate o renta
   medioId: '',
   cuotas: 1,
   montoEsCuota: false,
   primerPeriodo: '',
   primerPeriodoEditado: false,
-  quien: 'Ambos',
+  quien: '',
   notas: '',
 }
 
@@ -33,7 +36,7 @@ export default function FormularioMovimiento() {
   const { id } = useParams()
   const navegar = useNavigate()
   const { miembro } = useSesion()
-  const { grupos, subgrupos, medios, cargando } = useCatalogo()
+  const { grupos, subgrupos, medios, personas, cargando } = useCatalogo()
   const [form, setForm] = useState(VACIO)
   const [error, setError] = useState('')
   const [guardando, setGuardando] = useState(false)
@@ -45,7 +48,7 @@ export default function FormularioMovimiento() {
 
   // Al cargar uno nuevo, "Quién" arranca con el nombre de quien está usando la app.
   useEffect(() => {
-    if (!id && miembro) setForm((f) => ({ ...f, quien: miembro }))
+    if (!id && miembro) setForm((f) => ({ ...f, quien: f.quien || miembro }))
   }, [id, miembro])
 
   // Edición: se trae el movimiento y se completa el formulario.
@@ -58,14 +61,13 @@ export default function FormularioMovimiento() {
       .single()
       .then(({ data, error }) => {
         if (error) return setError('No se encontró el movimiento.')
-        const tipo = data.subgrupos.grupos.tipo
         setForm({
-          tipo,
+          tipo: data.subgrupos.grupos.tipo,
           fecha: data.fecha,
           grupoId: String(data.subgrupos.grupo_id),
           subgrupoId: String(data.subgrupo_id),
           concepto: data.concepto,
-          monto: String(Math.abs(data.monto)),
+          monto: numeroAMontoEscrito(Math.abs(data.monto)),
           sentidoInversion: data.monto < 0 ? 'sale' : 'vuelve',
           medioId: data.medio_pago_id ? String(data.medio_pago_id) : '',
           cuotas: data.cuotas,
@@ -78,9 +80,18 @@ export default function FormularioMovimiento() {
       })
   }, [id, cargando])
 
+  const tipo = TIPOS[form.tipo]
   const gruposDelTipo = grupos.filter((g) => g.tipo === form.tipo)
-  const subgruposDelGrupo = subgrupos.filter((s) => String(s.grupo_id) === form.grupoId)
-  const medio = medios.find((m) => String(m.id) === form.medioId)
+  const nombreGrupo = Object.fromEntries(grupos.map((g) => [g.id, g.nombre]))
+
+  // El subgrupo se busca entre todos los del tipo; si ya hay grupo elegido, solo entre los de ese grupo.
+  const opcionesSubgrupo = subgrupos
+    .filter((s) => gruposDelTipo.some((g) => g.id === s.grupo_id))
+    .filter((s) => !form.grupoId || String(s.grupo_id) === form.grupoId)
+    .map((s) => ({ valor: s.id, etiqueta: s.nombre, detalle: form.grupoId ? undefined : nombreGrupo[s.grupo_id] }))
+
+  const mediosDelTipo = medios.filter((m) => m.tipo !== 'otro' && (tipo.conTarjeta || m.tipo !== 'tarjeta'))
+  const medio = mediosDelTipo.find((m) => String(m.id) === form.medioId)
   const esTarjeta = medio?.tipo === 'tarjeta'
 
   // Mientras no se toque a mano, el mes de la primera cuota sigue a la fecha y al medio de pago.
@@ -88,23 +99,38 @@ export default function FormularioMovimiento() {
     ? form.primerPeriodo
     : primerPeriodoSugerido(form.fecha, esTarjeta)
 
+  const montoNumero = montoEscritoANumero(form.monto)
   const signo = form.tipo === 'inversion' && form.sentidoInversion === 'sale' ? -1 : 1
   const cuotas = esTarjeta ? Number(form.cuotas) || 1 : 1
   const vistaPrevia = useMemo(
-    () => calcularCuotas({ monto: form.monto, cuotas, montoEsCuota: esTarjeta && form.montoEsCuota, primerPeriodo }),
-    [form.monto, cuotas, esTarjeta, form.montoEsCuota, primerPeriodo],
+    () => calcularCuotas({ monto: montoNumero, cuotas, montoEsCuota: esTarjeta && form.montoEsCuota, primerPeriodo }),
+    [montoNumero, cuotas, esTarjeta, form.montoEsCuota, primerPeriodo],
   )
+
+  function cambiarTipo(nuevo) {
+    setForm((f) => {
+      const medioActual = medios.find((m) => String(m.id) === f.medioId)
+      const sacarMedio = !TIPOS[nuevo].conTarjeta && medioActual?.tipo === 'tarjeta'
+      return { ...f, tipo: nuevo, grupoId: '', subgrupoId: '', medioId: sacarMedio ? '' : f.medioId }
+    })
+  }
+
+  function elegirSubgrupo(subgrupoId) {
+    const s = subgrupos.find((x) => x.id === subgrupoId)
+    setForm((f) => ({ ...f, subgrupoId: String(subgrupoId), grupoId: String(s.grupo_id) }))
+  }
 
   async function guardar(e) {
     e.preventDefault()
     setError('')
-    if (!(Number(form.monto) > 0)) return setError('Poné un monto mayor a cero.')
+    if (!(montoNumero > 0)) return setError('Poné un monto mayor a cero.')
+    if (!form.subgrupoId) return setError('Elegí el subgrupo.')
 
     const registro = {
       fecha: form.fecha,
       subgrupo_id: Number(form.subgrupoId),
       concepto: form.concepto.trim(),
-      monto: signo * Number(form.monto),
+      monto: signo * montoNumero,
       cuotas,
       monto_es_cuota: esTarjeta && form.montoEsCuota,
       primer_periodo: primerPeriodo,
@@ -133,18 +159,18 @@ export default function FormularioMovimiento() {
   if (cargando) return <p>Cargando…</p>
 
   return (
-    <form className="tarjeta formulario" onSubmit={guardar}>
-      <h2>{id ? 'Editar movimiento' : 'Nuevo movimiento'}</h2>
+    <form className={`tarjeta formulario tipo-${form.tipo}`} onSubmit={guardar}>
+      <h2>{id ? `Editar ${tipo.titulo}` : `Nuevo ${tipo.titulo}`}</h2>
 
       <div className="selector-tipo" role="radiogroup" aria-label="Tipo">
-        {TIPOS.map((t) => (
+        {Object.entries(TIPOS).map(([valor, t]) => (
           <button
-            key={t.valor}
+            key={valor}
             type="button"
             role="radio"
-            aria-checked={form.tipo === t.valor}
-            className={form.tipo === t.valor ? 'activo' : ''}
-            onClick={() => setForm((f) => ({ ...f, tipo: t.valor, grupoId: '', subgrupoId: '' }))}
+            aria-checked={form.tipo === valor}
+            className={`opcion-${valor} ${form.tipo === valor ? 'activo' : ''}`}
+            onClick={() => cambiarTipo(valor)}
           >
             {t.etiqueta}
           </button>
@@ -154,11 +180,25 @@ export default function FormularioMovimiento() {
       <div className="fila">
         <label>
           Fecha
-          <input type="date" value={form.fecha} onChange={cambiar('fecha')} required />
+          <input
+            type="date"
+            value={form.fecha}
+            onChange={cambiar('fecha')}
+            // Abre el calendario tocando en cualquier parte del campo
+            onClick={(e) => e.currentTarget.showPicker?.()}
+            required
+          />
         </label>
         <label>
           Monto
-          <input type="number" inputMode="decimal" step="0.01" min="0" value={form.monto} onChange={cambiar('monto')} required />
+          <input
+            className="monto-entrada"
+            inputMode="decimal"
+            placeholder="0,00"
+            value={form.monto}
+            onChange={(e) => setForm((f) => ({ ...f, monto: formatearMontoEscrito(e.target.value) }))}
+            required
+          />
         </label>
       </div>
 
@@ -178,17 +218,25 @@ export default function FormularioMovimiento() {
       <div className="fila">
         <label>
           Grupo
-          <select value={form.grupoId} onChange={(e) => setForm((f) => ({ ...f, grupoId: e.target.value, subgrupoId: '' }))} required>
-            <option value="">Elegí…</option>
-            {gruposDelTipo.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
-          </select>
+          <Buscador
+            opciones={[{ valor: '', etiqueta: 'Todos los grupos' }, ...gruposDelTipo.map((g) => ({ valor: g.id, etiqueta: g.nombre }))]}
+            valor={form.grupoId}
+            onChange={(v) => setForm((f) => {
+              if (v === '') return { ...f, grupoId: '' }
+              const sigue = subgrupos.some((s) => String(s.id) === f.subgrupoId && s.grupo_id === v)
+              return { ...f, grupoId: String(v), subgrupoId: sigue ? f.subgrupoId : '' }
+            })}
+          />
         </label>
         <label>
           Subgrupo
-          <select value={form.subgrupoId} onChange={cambiar('subgrupoId')} required disabled={!form.grupoId}>
-            <option value="">Elegí…</option>
-            {subgruposDelGrupo.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-          </select>
+          <Buscador
+            opciones={opcionesSubgrupo}
+            valor={form.subgrupoId}
+            placeholder="Escribí para buscar, ej. nafta"
+            onChange={elegirSubgrupo}
+            requerido
+          />
         </label>
       </div>
 
@@ -199,18 +247,17 @@ export default function FormularioMovimiento() {
 
       <div className="fila">
         <label>
-          Medio de pago
+          {tipo.medio}
           <select value={form.medioId} onChange={cambiar('medioId')}>
             <option value="">Sin especificar</option>
-            {medios.filter((m) => m.tipo !== 'otro').map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
+            {mediosDelTipo.map((m) => <option key={m.id} value={m.id}>{m.nombre}</option>)}
           </select>
         </label>
         <label>
           Quién
-          <select value={form.quien} onChange={cambiar('quien')}>
-            <option>Meli</option>
-            <option>Carli</option>
-            <option>Ambos</option>
+          <select value={form.quien} onChange={cambiar('quien')} required>
+            {!form.quien && <option value="">Elegí…</option>}
+            {personas.map((p) => <option key={p.id}>{p.nombre}</option>)}
           </select>
         </label>
       </div>
@@ -228,6 +275,7 @@ export default function FormularioMovimiento() {
               <input
                 type="month"
                 value={primerPeriodo.slice(0, 7)}
+                onClick={(e) => e.currentTarget.showPicker?.()}
                 onChange={(e) => setForm((f) => ({ ...f, primerPeriodo: `${e.target.value}-01`, primerPeriodoEditado: true }))}
               />
             </label>
@@ -265,7 +313,9 @@ export default function FormularioMovimiento() {
       <div className="acciones">
         {id && <button type="button" className="peligro" onClick={borrar}>Borrar</button>}
         <button type="button" className="secundario" onClick={() => navegar(-1)}>Cancelar</button>
-        <button type="submit" disabled={guardando}>{guardando ? 'Guardando…' : 'Guardar'}</button>
+        <button type="submit" className="guardar" disabled={guardando}>
+          {guardando ? 'Guardando…' : `Guardar ${tipo.titulo}`}
+        </button>
       </div>
     </form>
   )

@@ -6,6 +6,7 @@ import Inicio from './paginas/Inicio.jsx'
 import Movimientos from './paginas/Movimientos.jsx'
 import FormularioMovimiento from './paginas/FormularioMovimiento.jsx'
 import Sincronizar from './paginas/Sincronizar.jsx'
+import Configuracion from './paginas/Configuracion.jsx'
 
 function Aplicacion() {
   const { sesion, miembro } = useSesion()
@@ -32,6 +33,7 @@ function Aplicacion() {
           <NavLink to="/" end>Resumen</NavLink>
           <NavLink to="/movimientos">Movimientos</NavLink>
           <NavLink to="/sincronizar">Sincronizar</NavLink>
+          <NavLink to="/configuracion">Ajustes</NavLink>
         </nav>
         <button type="button" className="secundario" onClick={() => supabase.auth.signOut()}>
           Salir ({miembro})
@@ -44,6 +46,7 @@ function Aplicacion() {
           <Route path="/movimientos/nuevo" element={<FormularioMovimiento />} />
           <Route path="/movimientos/:id" element={<FormularioMovimiento />} />
           <Route path="/sincronizar" element={<Sincronizar />} />
+          <Route path="/configuracion" element={<Configuracion />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

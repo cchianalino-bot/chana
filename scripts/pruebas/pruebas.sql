@@ -100,13 +100,43 @@ select pg_temp.verificar(
     'el saldo de v_resumen_mensual coincide con el CSV');
 
 -- -----------------------------------------------------------------------------
--- 3. Seguridad: solo los miembros ven datos
+-- 3. Personas ("Quién")
+-- -----------------------------------------------------------------------------
+update public.personas set nombre = 'Melisa' where nombre = 'Meli';
+select pg_temp.verificar(
+    (select count(*) from public.movimientos where quien = 'Melisa') > 0
+      and not exists (select 1 from public.movimientos where quien = 'Meli'),
+    'renombrar una persona actualiza sus movimientos');
+update public.personas set nombre = 'Meli' where nombre = 'Melisa';
+
+do $$
+begin
+    insert into public.movimientos (fecha, subgrupo_id, concepto, monto, primer_periodo, quien)
+    select '2027-01-05', id, 'Quién inválido', 100, '2027-01-01', 'Juan' from public.subgrupos limit 1;
+    raise exception 'FALLÓ: se aceptó un quién que no existe';
+exception when foreign_key_violation then
+    raise notice 'ok · no se acepta un quién que no está en personas';
+end
+$$;
+
+do $$
+begin
+    delete from public.personas where nombre = 'Carli';
+    raise exception 'FALLÓ: se borró una persona con movimientos';
+exception when foreign_key_violation then
+    raise notice 'ok · no se puede borrar una persona con movimientos';
+end
+$$;
+
+-- -----------------------------------------------------------------------------
+-- 4. Seguridad: solo los miembros ven datos
 -- -----------------------------------------------------------------------------
 set role authenticated;
 
 do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000b', false); end $$;
 select pg_temp.verificar((select count(*) = 0 from public.movimientos), 'un usuario que no es miembro no ve movimientos');
 select pg_temp.verificar((select count(*) = 0 from public.v_resumen_mensual), 'ni los tableros');
+select pg_temp.verificar((select count(*) = 0 from public.personas), 'ni las personas');
 
 do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false); end $$;
 select pg_temp.verificar((select count(*) > 0 from public.movimientos), 'un miembro ve los movimientos');
