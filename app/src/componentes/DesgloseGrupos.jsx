@@ -9,8 +9,9 @@ import { fechaCorta, nombreMes, pesos } from '../lib/formato.js'
  * movimientos del mes.
  *
  * filas: [{ grupo_id, grupo, subgrupo_id, subgrupo, total }] de v_totales_por_subgrupo
+ * tipo:  'gasto' o 'ingreso' (define el color)
  */
-export default function DesgloseGrupos({ filas, mes }) {
+export default function DesgloseGrupos({ filas, mes, tipo = 'gasto' }) {
   const [grupoId, setGrupoId] = useState(null)
 
   const grupos = Object.values(filas.reduce((acc, f) => {
@@ -25,7 +26,7 @@ export default function DesgloseGrupos({ filas, mes }) {
 
   return (
     <>
-      <ul className="barras desglose">
+      <ul className={`barras desglose desglose-${tipo}`}>
         {grupos.map((g) => (
           <li key={g.id}>
             <button type="button" className="fila-barra" onClick={() => setGrupoId(g.id)}>
@@ -36,12 +37,12 @@ export default function DesgloseGrupos({ filas, mes }) {
           </li>
         ))}
       </ul>
-      {grupo && <ModalGrupo grupo={grupo} mes={mes} onCerrar={() => setGrupoId(null)} />}
+      {grupo && <ModalGrupo grupo={grupo} mes={mes} tipo={tipo} onCerrar={() => setGrupoId(null)} />}
     </>
   )
 }
 
-function ModalGrupo({ grupo, mes, onCerrar }) {
+function ModalGrupo({ grupo, mes, tipo, onCerrar }) {
   const dialogo = useRef(null)
   const [subgrupo, setSubgrupo] = useState(null)
   const [movimientos, setMovimientos] = useState(null)
@@ -71,7 +72,7 @@ function ModalGrupo({ grupo, mes, onCerrar }) {
   return (
     <dialog
       ref={dialogo}
-      className="modal"
+      className={`modal modal-${tipo}`}
       onCancel={onCerrar}
       // Un clic en el fondo oscuro (fuera del contenido) cierra el modal.
       onClick={(e) => e.target === dialogo.current && onCerrar()}

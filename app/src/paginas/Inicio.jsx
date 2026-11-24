@@ -15,8 +15,8 @@ export default function Inicio() {
     supabase.from('v_resumen_mensual').select('*').eq('periodo', mes).maybeSingle()
       .then(({ data }) => setResumen(data ?? { ingresos: 0, gastos: 0, inversiones: 0, saldo: 0 }))
 
-    supabase.from('v_totales_por_subgrupo').select('grupo_id, grupo, subgrupo_id, subgrupo, total')
-      .eq('periodo', mes).eq('tipo', 'gasto')
+    supabase.from('v_totales_por_subgrupo').select('tipo, grupo_id, grupo, subgrupo_id, subgrupo, total')
+      .eq('periodo', mes).in('tipo', ['gasto', 'ingreso'])
       .then(({ data }) => setPorGrupo(data ?? []))
   }, [mes])
 
@@ -25,6 +25,8 @@ export default function Inicio() {
       .then(({ data }) => setCompromisos(data ?? []))
   }, [])
 
+  const gastos = porGrupo.filter((f) => f.tipo === 'gasto')
+  const ingresos = porGrupo.filter((f) => f.tipo === 'ingreso')
   const compromisosPorMes = {}
   for (const c of compromisos) {
     compromisosPorMes[c.periodo] ??= {}
@@ -53,10 +55,18 @@ export default function Inicio() {
 
       <div className="tarjeta">
         <h3>Gastos por grupo</h3>
-        {porGrupo.length === 0
+        {gastos.length === 0
           ? <p className="vacio">Sin gastos en {nombreMes(mes)}.</p>
           : <p className="vacio ayuda">Tocá un grupo para ver el detalle por subgrupo.</p>}
-        <DesgloseGrupos filas={porGrupo} mes={mes} />
+        <DesgloseGrupos filas={gastos} mes={mes} tipo="gasto" />
+      </div>
+
+      <div className="tarjeta">
+        <h3>Ingresos por grupo</h3>
+        {ingresos.length === 0
+          ? <p className="vacio">Sin ingresos en {nombreMes(mes)}.</p>
+          : <p className="vacio ayuda">Tocá un grupo para ver el detalle por subgrupo.</p>}
+        <DesgloseGrupos filas={ingresos} mes={mes} tipo="ingreso" />
       </div>
 
       <div className="tarjeta">

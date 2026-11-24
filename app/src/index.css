@@ -239,3 +239,8 @@ a { color: var(--primario); }
   .desglose .fila-barra .barra { grid-column: 1 / -1; grid-row: 2; }
 }
 .ayuda { font-size: .88rem; margin-top: -.4rem; }
+
+/* Ingresos en verde */
+.desglose-ingreso .barra span { background: var(--ingreso); }
+.modal-ingreso { border-top: 5px solid #137a4b; }
+.modal-gasto { border-top: 5px solid #b3261e; }
