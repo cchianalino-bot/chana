@@ -195,31 +195,47 @@ progress { width: 100%; height: .8rem; }
 .encabezado-acciones { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
 a { color: var(--primario); }
 
-/* Desglose de gastos: grupo → subgrupo → movimientos */
+/* Gastos por grupo: cada grupo abre un modal con sus subgrupos */
 .desglose li { display: block; }
 .desglose .fila-barra {
-  display: grid; grid-template-columns: 11rem 1fr 8.5rem; align-items: center; gap: .6rem;
+  display: grid; grid-template-columns: 11rem 1fr 9rem; align-items: center; gap: .6rem;
   width: 100%; padding: .35rem .25rem; text-align: left;
   background: transparent; color: var(--texto); border: 0; border-radius: 6px;
 }
 .desglose .fila-barra:hover { background: var(--acento); }
-.desglose .flecha { display: inline-block; width: 1rem; text-align: center; margin-right: .2rem; color: var(--suave); transition: transform .15s; }
-.desglose .fila-barra[aria-expanded="true"] > .etiqueta .flecha { transform: rotate(90deg); }
-.desglose .valor small { display: block; color: var(--suave); font-size: .8rem; }
-.desglose .subniveles { margin: .2rem 0 .5rem 1rem; padding-left: .5rem; border-left: 2px solid var(--borde); }
-.desglose .subniveles .barra span { background: var(--suave); }
-.desglose li.abierto > .fila-barra { font-weight: 600; }
-.detalle-movimientos { list-style: none; margin: .25rem 0 .5rem 1.2rem; padding: 0; }
-.detalle-movimientos a {
-  display: flex; justify-content: space-between; gap: .75rem; padding: .35rem .5rem;
-  color: var(--texto); text-decoration: none; border-radius: 6px; font-size: .92rem;
+.desglose .valor { text-align: right; font-variant-numeric: tabular-nums; }
+.flecha { color: var(--suave); margin-left: .35rem; }
+
+/* Modal: siempre con fondo blanco, también en modo oscuro */
+.modal {
+  --m-texto: #1d2433; --m-suave: #667085; --m-borde: #e3e6eb; --m-acento: #f1f4f9;
+  width: min(560px, calc(100vw - 2rem)); max-height: calc(100vh - 2rem);
+  padding: 0; border: 0; border-radius: 14px;
+  background: #ffffff; color: var(--m-texto); color-scheme: light;
+  box-shadow: 0 20px 60px rgb(0 0 0 / .35);
 }
-.detalle-movimientos a:hover { background: var(--acento); }
-.detalle-movimientos small { display: block; color: var(--suave); }
-.ayuda { font-size: .88rem; margin-top: -.4rem; }
+.modal::backdrop { background: rgb(10 14 22 / .6); }
+.modal-contenido { padding: 1rem 1.1rem 1.2rem; }
+.modal-encabezado { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; margin-bottom: .75rem; }
+.modal-encabezado h3 { margin: 0; font-size: 1.15rem; }
+.modal-encabezado small { color: var(--m-suave); text-transform: capitalize; }
+.modal .cerrar {
+  background: transparent; border: 1px solid var(--m-borde); color: var(--m-texto);
+  width: 2.2rem; height: 2.2rem; padding: 0; border-radius: 50%; font-size: 1.3rem; line-height: 1;
+}
+.modal .enlace { background: none; border: 0; padding: 0 0 .3rem; color: #1f3864; font-size: .9rem; }
+.tabla-modal { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.tabla-modal th, .tabla-modal td { padding: .55rem .4rem; text-align: right; border-bottom: 1px solid var(--m-borde); }
+.tabla-modal th:first-child, .tabla-modal td:first-child { text-align: left; text-transform: none; }
+.tabla-modal th { color: var(--m-suave); font-weight: 600; font-size: .85rem; }
+.tabla-modal tr.clic { cursor: pointer; }
+.tabla-modal tr.clic:hover { background: var(--m-acento); }
+.tabla-modal .flecha { color: var(--m-suave); }
+.tabla-modal td small { display: block; color: var(--m-suave); font-size: .82rem; }
+.tabla-modal a { color: var(--m-texto); font-weight: 500; }
+.tabla-modal tfoot td { font-weight: 700; border-top: 2px solid var(--m-texto); border-bottom: 0; }
 @media (max-width: 640px) {
   .desglose .fila-barra { grid-template-columns: 1fr auto; }
   .desglose .fila-barra .barra { grid-column: 1 / -1; grid-row: 2; }
-  .desglose .subniveles { margin-left: .4rem; }
-  .detalle-movimientos { margin-left: .4rem; }
 }
+.ayuda { font-size: .88rem; margin-top: -.4rem; }

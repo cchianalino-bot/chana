@@ -55,7 +55,7 @@ export default function Inicio() {
         <h3>Gastos por grupo</h3>
         {porGrupo.length === 0
           ? <p className="vacio">Sin gastos en {nombreMes(mes)}.</p>
-          : <p className="vacio ayuda">Tocá un grupo para ver sus subgrupos, y un subgrupo para ver los movimientos.</p>}
+          : <p className="vacio ayuda">Tocá un grupo para ver el detalle por subgrupo.</p>}
         <DesgloseGrupos filas={porGrupo} mes={mes} />
       </div>
 
