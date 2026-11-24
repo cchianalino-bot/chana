@@ -2,7 +2,7 @@
 -- Finanzas familiares · esquema inicial
 --
 -- Modelo:
---   grupos → subgrupos        clasificación (el tipo ingreso/gasto lo define el grupo)
+--   grupos → subgrupos        clasificación (el tipo ingreso/gasto/inversión lo define el grupo)
 --   medios_pago               efectivo, transferencia, tarjetas...
 --   movimientos               lo que se carga (formulario, planilla o migración)
 --   imputaciones              una fila por mes/cuota; los tableros leen de acá
@@ -35,7 +35,7 @@ $$;
 create table public.grupos (
     id      bigint generated always as identity primary key,
     nombre  text not null unique,
-    tipo    text not null check (tipo in ('ingreso', 'gasto')),
+    tipo    text not null check (tipo in ('ingreso', 'gasto', 'inversion')),
     orden   smallint not null default 0,
     activo  boolean not null default true
 );
@@ -77,6 +77,11 @@ create table public.sincronizaciones (
 -- en ese caso es el valor de cada cuota (útil cuando hay recargo y el total
 -- no se divide exacto). `primer_periodo` es el mes de la primera cuota.
 -- Un ingreso o gasto común es simplemente cuotas = 1.
+--
+-- En los grupos de tipo 'inversion' el signo indica la dirección del dinero:
+-- negativo = plata que se invierte (sale de la cuenta), positivo = plata que
+-- vuelve (rescate o renta). En ingresos y gastos el monto va siempre positivo,
+-- salvo reintegros.
 -- -----------------------------------------------------------------------------
 create table public.movimientos (
     id                bigint generated always as identity primary key,
@@ -200,13 +205,16 @@ join public.subgrupos s         on s.id = m.subgrupo_id
 join public.grupos g            on g.id = s.grupo_id
 left join public.medios_pago mp on mp.id = m.medio_pago_id;
 
+-- saldo = lo que queda en la cuenta: ingresos - gastos + movimiento neto de inversiones.
 create view public.v_resumen_mensual
 with (security_invoker = true) as
 select periodo,
-       coalesce(sum(monto) filter (where tipo = 'ingreso'), 0) as ingresos,
-       coalesce(sum(monto) filter (where tipo = 'gasto'), 0)   as gastos,
+       coalesce(sum(monto) filter (where tipo = 'ingreso'), 0)   as ingresos,
+       coalesce(sum(monto) filter (where tipo = 'gasto'), 0)     as gastos,
+       coalesce(sum(monto) filter (where tipo = 'inversion'), 0) as inversiones,
        coalesce(sum(monto) filter (where tipo = 'ingreso'), 0)
-     - coalesce(sum(monto) filter (where tipo = 'gasto'), 0)   as saldo
+     - coalesce(sum(monto) filter (where tipo = 'gasto'), 0)
+     + coalesce(sum(monto) filter (where tipo = 'inversion'), 0) as saldo
 from public.v_imputaciones
 group by periodo;
 

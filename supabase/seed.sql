@@ -4,18 +4,19 @@
 -- =============================================================================
 
 insert into public.grupos (nombre, tipo, orden) values
-    ('Ingresos',                 'ingreso', 1),
-    ('Hogar',                    'gasto',   2),
-    ('Chicos y actividades',     'gasto',   3),
-    ('Comida',                   'gasto',   4),
-    ('Auto',                     'gasto',   5),
-    ('Salidas',                  'gasto',   6),
-    ('Salud y cuidado personal', 'gasto',   7),
-    ('Impuestos',                'gasto',   8),
-    ('Trabajo',                  'gasto',   9),
-    ('Préstamos y ahorros',      'gasto',  10),
-    ('Otros',                    'gasto',  11),
-    ('Sin clasificar',           'gasto',  12);
+    ('Ingresos',                 'ingreso',    1),
+    ('Inversiones',              'inversion',  2),
+    ('Hogar',                    'gasto',      3),
+    ('Chicos y actividades',     'gasto',      4),
+    ('Comida',                   'gasto',      5),
+    ('Auto',                     'gasto',      6),
+    ('Salidas',                  'gasto',      7),
+    ('Salud y cuidado personal', 'gasto',      8),
+    ('Impuestos',                'gasto',      9),
+    ('Trabajo',                  'gasto',     10),
+    ('Préstamos',                'gasto',     11),
+    ('Otros',                    'gasto',     12),
+    ('Sin clasificar',           'gasto',     13);
 
 insert into public.subgrupos (grupo_id, nombre)
 select g.id, s.nombre
@@ -23,18 +24,21 @@ from (values
     ('Ingresos', 'Sueldo Meli'),
     ('Ingresos', 'Ingresos Carli'),
     ('Ingresos', 'Otros ingresos'),
-    ('Ingresos', 'Inversiones'),
+
+    ('Inversiones', 'Inversiones'),
+    ('Inversiones', 'Plazos fijos'),
 
     ('Hogar', 'Sueldo empleada'),
     ('Hogar', 'Gas'),
     ('Hogar', 'Epec'),
     ('Hogar', 'Expensas'),
-    ('Hogar', 'Huerto'),
     ('Hogar', 'Construcción'),
     ('Hogar', 'Limpieza'),
     ('Hogar', 'Leña'),
     ('Hogar', 'Mascotas'),
+    ('Hogar', 'Sudecor'),
 
+    ('Chicos y actividades', 'Huerto'),
     ('Chicos y actividades', 'Danza'),
     ('Chicos y actividades', 'Gimnasia artística'),
     ('Chicos y actividades', 'Academia'),
@@ -85,15 +89,12 @@ from (values
     ('Impuestos', 'Monotributo'),
     ('Impuestos', 'Rentas'),
     ('Impuestos', 'AFIP / ARCA'),
-    ('Impuestos', 'Sudecor'),
     ('Impuestos', 'Impuestos tarjeta'),
 
     ('Trabajo', 'Gastos Demyn'),
     ('Trabajo', 'Diseñadoras'),
 
-    ('Préstamos y ahorros', 'Préstamos'),
-    ('Préstamos y ahorros', 'Préstamos a Gise'),
-    ('Préstamos y ahorros', 'Plazos fijos'),
+    ('Préstamos', 'Préstamos vigentes'),
 
     ('Otros', 'Ropa'),
     ('Otros', 'Sorteos'),

@@ -25,7 +25,10 @@ medios_pago ──────────────────┘
 - **imputaciones**: una fila por mes. Las genera automáticamente la base de datos
   (trigger `generar_imputaciones`) a partir de `monto`, `cuotas` y `primer_periodo`.
   **Los tableros leen de acá**, así cada cuota cae en su mes.
-- El tipo (ingreso/gasto) lo define el **grupo**, no el movimiento.
+- El tipo lo define el **grupo**, no el movimiento: `ingreso`, `gasto` o `inversion`.
+- **Inversiones** (FCI, plazos fijos) van aparte de ingresos y gastos. El signo indica
+  hacia dónde va la plata: negativo = se invierte, positivo = vuelve (rescate o renta).
+  El saldo del mes es `ingresos - gastos + inversiones`.
 - Las tarjetas son un **medio de pago**, no un grupo: un gasto con TC va a su grupo
   real (Comida, Auto…) y se registra con qué tarjeta se pagó.
 - Seguridad: solo los usuarios cargados en `miembros` (Meli y Carli) leen o escriben.
@@ -42,6 +45,7 @@ Es la que lee el botón **Sincronizar**. Una fila por movimiento:
 | 10/01/2027 | Gasto | Comida | Super | La Anónima | 45000 | | | TC Meli | Meli |
 | 12/01/2027 | Gasto | Hogar | Construcción | Corralón | 300000 | 6 | 02/2027 | TC Carli | Carli |
 
+- **Tipo**: `Ingreso`, `Gasto` o `Inversión`.
 - **Cuotas** vacío = un solo pago.
 - **Mes 1ra cuota** vacío = el mes siguiente a la fecha si se pagó con tarjeta
   (cae en el próximo resumen); si no, el mes de la fecha.

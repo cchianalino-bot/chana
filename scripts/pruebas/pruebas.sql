@@ -78,7 +78,9 @@ select pg_temp.verificar(
 select pg_temp.verificar(
     not exists (
         select 1 from csv_movimientos c join public.grupos g on g.nombre = c.grupo
-        where (g.tipo = 'ingreso') <> (c.tipo = 'Ingreso')),
+        where c.tipo <> case g.tipo when 'ingreso' then 'Ingreso'
+                                    when 'inversion' then 'Inversión'
+                                    else 'Gasto' end),
     'el tipo de cada fila coincide con el tipo de su grupo');
 
 insert into public.movimientos (fecha, subgrupo_id, concepto, monto, primer_periodo, medio_pago_id, quien, origen)
@@ -94,7 +96,7 @@ select pg_temp.verificar(
 
 select pg_temp.verificar(
     (select sum(saldo) from public.v_resumen_mensual)
-      = (select sum(case when tipo = 'Ingreso' then monto else -monto end) from csv_movimientos),
+      = (select sum(case when tipo = 'Gasto' then -monto else monto end) from csv_movimientos),
     'el saldo de v_resumen_mensual coincide con el CSV');
 
 -- -----------------------------------------------------------------------------
@@ -120,5 +122,5 @@ reset role;
 \pset tuples_only off
 \echo
 \echo Resumen mensual migrado:
-select to_char(periodo, 'MM/YYYY') as mes, ingresos, gastos, saldo
+select to_char(periodo, 'MM/YYYY') as mes, ingresos, gastos, inversiones, saldo
 from public.v_resumen_mensual where periodo < '2027-01-01' order by periodo;

@@ -36,7 +36,10 @@ COLUMNAS = [
     "Cuotas", "Mes 1ra cuota", "Medio de pago", "Quién",
 ]
 
-GRUPOS_INGRESO = {"Ingresos"}
+# Tipo de cada grupo (el resto son gastos). En la planilla los ingresos y las
+# inversiones van con su signo; los gastos, en negativo.
+TIPO_GRUPO = {"Ingresos": "Ingreso", "Inversiones": "Inversión"}
+GRUPOS_CON_SIGNO = set(TIPO_GRUPO)
 
 CONCEPTO_AJUSTE = "Ajuste conciliación con resumen"
 TOLERANCIA = 1.0  # pesos; diferencias menores se consideran redondeo
@@ -51,10 +54,10 @@ RESUMEN = {
     "Sueldo Meli":        ("Ingresos", "Sueldo Meli", "Meli"),
     "Ingresos Carli":     None,
     "Otros ingresos":     ("Ingresos", "Otros ingresos", "Ambos"),
-    "Inversiones":        ("Ingresos", "Inversiones", "Ambos"),
+    "Inversiones":        ("Inversiones", "Inversiones", "Ambos"),
     "Sueldo empleada":    ("Hogar", "Sueldo empleada", "Ambos"),
     "Tarjetas":           None,
-    "Huerto":             ("Hogar", "Huerto", "Ambos"),
+    "Huerto":             ("Chicos y actividades", "Huerto", "Ambos"),
     "Danza":              ("Chicos y actividades", "Danza", "Ambos"),
     "Gimnasia Artistica": ("Chicos y actividades", "Gimnasia artística", "Ambos"),
     "Academia":           ("Chicos y actividades", "Academia", "Ambos"),
@@ -63,7 +66,7 @@ RESUMEN = {
     "Futbol":             ("Chicos y actividades", "Fútbol", "Ambos"),
     "Gastos Demyn":       ("Trabajo", "Gastos Demyn", "Carli"),
     "Gas":                ("Hogar", "Gas", "Ambos"),
-    "Sudecor":            ("Impuestos", "Sudecor", "Ambos"),
+    "Sudecor":            ("Hogar", "Sudecor", "Ambos"),
     "Expensas":           ("Hogar", "Expensas", "Ambos"),
     "Monotributo":        ("Impuestos", "Monotributo", "Ambos"),
     "Epec":               ("Hogar", "Epec", "Ambos"),
@@ -73,9 +76,9 @@ RESUMEN = {
     "Salida":             ("Salidas", "General", "Ambos"),
     "Otros Gastos":       None,
     "Construccion":       ("Hogar", "Construcción", "Ambos"),
-    "Prestamo 1":         ("Préstamos y ahorros", "Préstamos", "Ambos"),
-    "Prestamo 2":         ("Préstamos y ahorros", "Préstamos", "Ambos"),
-    "Prestamo 3":         ("Préstamos y ahorros", "Préstamos", "Ambos"),
+    "Prestamo 1":         ("Préstamos", "Préstamos vigentes", "Ambos"),
+    "Prestamo 2":         ("Préstamos", "Préstamos vigentes", "Ambos"),
+    "Prestamo 3":         ("Préstamos", "Préstamos vigentes", "Ambos"),
 }
 
 COMIDA = {
@@ -139,7 +142,11 @@ class Fila:
 
     @property
     def tipo(self):
-        return "Ingreso" if self.grupo in GRUPOS_INGRESO else "Gasto"
+        return TIPO_GRUPO.get(self.grupo, "Gasto")
+
+    @property
+    def efecto_en_saldo(self):
+        return -self.monto if self.tipo == "Gasto" else self.monto
 
 
 def clave(texto):
@@ -247,7 +254,7 @@ class Migracion:
                 continue  # se migra desde su hoja de detalle
 
             grupo, subgrupo, quien = destino
-            signo = 1 if grupo in GRUPOS_INGRESO else -1
+            signo = 1 if grupo in GRUPOS_CON_SIGNO else -1
             for mes, valor in valores.items():
                 if signo < 0 and valor > 0 and self.en_rango(mes):
                     self.avisos.append(
@@ -270,7 +277,7 @@ class Migracion:
             "Otros Gastos":   ("Otros", "General", "Ambos"),
             "Ingresos Carli": ("Ingresos", "Ingresos Carli", "Carli"),
         }[concepto_resumen]
-        signo = 1 if grupo_ajuste in GRUPOS_INGRESO else -1
+        signo = 1 if grupo_ajuste in GRUPOS_CON_SIGNO else -1
 
         ws = self.wb[hoja]
         cols = columnas_por_mes(ws)
@@ -279,7 +286,7 @@ class Migracion:
         por_mes = defaultdict(float)
         for fila in generador(ws, cols):
             self.agregar(fila)
-            por_mes[fila.periodo] += fila.monto if fila.tipo == "Ingreso" else -fila.monto
+            por_mes[fila.periodo] += fila.efecto_en_saldo
 
         valores_resumen = resumen.get(concepto_resumen, {})
         for mes in sorted(set(valores_resumen) | set(por_mes)):
@@ -423,7 +430,7 @@ class Migracion:
     def saldo_por_mes(self):
         saldo = defaultdict(float)
         for f in self.filas:
-            saldo[f.periodo] += f.monto if f.tipo == "Ingreso" else -f.monto
+            saldo[f.periodo] += f.efecto_en_saldo
         return saldo
 
 
@@ -431,7 +438,7 @@ def escribir_csv(filas, ruta):
     with open(ruta, "w", newline="", encoding="utf-8") as fh:
         w = csv.writer(fh)
         w.writerow(COLUMNAS)
-        for f in sorted(filas, key=lambda f: (f.periodo, f.tipo != "Ingreso", f.grupo, f.subgrupo, f.concepto)):
+        for f in sorted(filas, key=lambda f: (f.periodo, ["Ingreso", "Inversión", "Gasto"].index(f.tipo), f.grupo, f.subgrupo, f.concepto)):
             w.writerow([
                 f.periodo.isoformat(), f.tipo, f.grupo, f.subgrupo, f.concepto,
                 f"{round(f.monto, 2):.2f}", "", "", f.medio, f.quien,
@@ -503,8 +510,9 @@ def escribir_reporte(m, ruta):
         "",
         "- **Salidas:** la hoja de detalle tiene un formato irregular; se migró el total",
         "  mensual del resumen como Salidas / General.",
-        "- **Gise:** préstamos y devoluciones; falta definir cómo registrarlos.",
-        "- **Ahorros:** plazos fijos; son ahorro, no ingresos ni gastos del mes.",
+        "- **Gise:** es un control de descuentos del sueldo de la empleada; no va en la app.",
+        "- **Ahorros (plazos fijos):** no se migraron para no duplicar el movimiento que ya",
+        "  figura en la fila Inversiones del resumen. Los nuevos se cargan en Inversiones / Plazos fijos.",
         "- **Proyecciones:** los meses posteriores al período migrado.",
         "- **Consumos con tarjeta:** quedaron en Sin clasificar / Consumos tarjeta (histórico),",
         "  con el comercio como concepto, para clasificarlos desde la app.",
