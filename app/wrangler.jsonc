@@ -1,11 +1,22 @@
-// Cloudflare Workers: sirve el build de Vite (dist/) como sitio estático.
+// Cloudflare Workers: sirve el build de Vite (dist/) y la API de worker/.
 // "single-page-application" devuelve index.html en cualquier ruta, para que
 // funcionen las URLs del router (/movimientos, /movimientos/12, etc.).
+// Las rutas /api/* las atiende primero el Worker.
 {
   "name": "chana",
+  "main": "worker/index.js",
   "compatibility_date": "2025-09-01",
   "assets": {
     "directory": "./dist",
-    "not_found_handling": "single-page-application"
+    "binding": "ASSETS",
+    "not_found_handling": "single-page-application",
+    "run_worker_first": ["/api/*"]
+  },
+  // Valores públicos. La clave de la cuenta de servicio de Google va aparte,
+  // como secret GOOGLE_SERVICE_ACCOUNT (Settings → Variables and Secrets).
+  "vars": {
+    "SUPABASE_URL": "https://crstqzizytudjlpuzryt.supabase.co",
+    "SUPABASE_ANON_KEY": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNyc3Rxeml6eXR1ZGpscHV6cnl0Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg3NzY5MjAsImV4cCI6MjA1NDM1MjkyMH0.v6m8FMwByUnj20lCTgbq1hAIDFV4ikUXASkhJtlxUpo",
+    "ID_PLANILLA": "1HyGm2in6PZlwe1zjMlPWvHr3ArVqYq21DH7DcRvfaHE"
   }
 }

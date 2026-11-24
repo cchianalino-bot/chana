@@ -8,7 +8,7 @@
     "build": "vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "node --test \"src/**/*.test.js\""
+    "test": "node --test \"src/**/*.test.js\" \"worker/**/*.test.js\""
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.119.2",

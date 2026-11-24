@@ -107,6 +107,8 @@ cuotas, totales y permisos.
 - [x] Crear la hoja "Movimientos" en Google Sheets con el historial migrado (Drive: carpeta "Chana · Finanzas familiares")
 - [x] Esquema y datos iniciales cargados en Supabase
 - [x] Frontend: login, resumen del mes, movimientos, formulario con cuotas
-- [ ] Sincronizar desde Google Sheets (vista previa + confirmar)
+- [x] Sincronizar desde Google Sheets (vista previa + confirmar)
+- [ ] Cuenta de servicio de Google cargada como secret en Cloudflare
+- [ ] Importar el historial (1.272 movimientos) con Sincronizar
 - [ ] Tableros de control
-- [ ] Publicar en Cloudflare Pages
+- [x] Publicar en Cloudflare: https://chana.cchianalino.workers.dev

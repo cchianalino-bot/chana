@@ -30,4 +30,9 @@ export default [
       ],
     },
   },
+  {
+    // Las pruebas corren en Node
+    files: ['**/*.test.js'],
+    languageOptions: { globals: { ...globals.browser, ...globals.node } },
+  },
 ]
