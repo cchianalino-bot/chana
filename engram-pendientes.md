@@ -47,6 +47,12 @@ Origen: app de finanzas familiares (repo `chana`), noviembre 2026.
   revisar en GitHub (*Settings → Applications → Cloudflare Workers and Pages →
   Repository access*) que el repo esté incluido. Reconectar no dispara un
   build: hace falta un push nuevo (o un deploy manual).
+- **Al reconectar, Cloudflare puede vaciar el Build command y volver el Root
+  directory a `/`.** Si no hay `wrangler.jsonc` en ese directorio, Wrangler
+  "autoconfigura" un sitio estático y sube el código fuente sin compilar
+  (pantalla en blanco). Prevención: `wrangler.jsonc` en la raíz del repo con
+  `"build": { "command": "npm ci && npm run build", "cwd": "<carpeta app>" }`,
+  así compila solo y no depende de lo que diga el panel.
 - Revisar también el **API token** de *Settings → Builds*: cada proyecto con su
   propio token, no reusar el de otro proyecto o cliente.
 

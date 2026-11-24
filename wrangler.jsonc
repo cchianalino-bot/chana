@@ -1,13 +1,20 @@
-// Cloudflare Workers: sirve el build de Vite (dist/) y la API de worker/.
+// Cloudflare Workers: sirve el build de Vite (app/dist/) y la API de app/worker/.
+// Está en la raíz del repo y compila la app por su cuenta ("build"), así el deploy
+// funciona aunque en el panel de Cloudflare queden vacíos el Root directory y el
+// Build command: basta con el Deploy command `npx wrangler deploy`.
 // "single-page-application" devuelve index.html en cualquier ruta, para que
 // funcionen las URLs del router (/movimientos, /movimientos/12, etc.).
 // Las rutas /api/* las atiende primero el Worker.
 {
   "name": "chana",
-  "main": "worker/index.js",
+  "main": "app/worker/index.js",
   "compatibility_date": "2025-09-01",
+  "build": {
+    "command": "npm ci && npm run build",
+    "cwd": "app"
+  },
   "assets": {
-    "directory": "./dist",
+    "directory": "./app/dist",
     "binding": "ASSETS",
     "not_found_handling": "single-page-application",
     "run_worker_first": ["/api/*"]

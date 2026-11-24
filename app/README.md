@@ -12,16 +12,16 @@ npm run build                # genera dist/
 
 ## Deploy en Cloudflare
 
-Se despliega como Worker con archivos estáticos (`wrangler.jsonc`). En Cloudflare:
-*Create an app → Continue with GitHub → repo chana*, con:
+Se despliega como Worker con archivos estáticos. La configuración está en
+`wrangler.jsonc`, **en la raíz del repo**, y compila la app sola antes de
+publicar. En Cloudflare (*Settings → Builds*) alcanza con:
 
 | Campo | Valor |
 |---|---|
-| Build command | `npm run build` |
+| Root directory | `/` (la raíz; **no** `/app`) |
+| Build command | vacío (o `true`) |
 | Deploy command | `npx wrangler deploy` |
-| Advanced settings → Path | `/app` |
 
-Las variables de Supabase vienen de `.env.production` (son públicas), así que no
-hace falta cargar variables en Cloudflare.
-
-Ver el README de la raíz del repo para el modelo de datos.
+Las variables de Supabase vienen de `.env.production` y de `vars` en
+`wrangler.jsonc` (son públicas). La clave de Google va como secret
+`GOOGLE_SERVICE_ACCOUNT` en *Settings → Variables and Secrets*.
