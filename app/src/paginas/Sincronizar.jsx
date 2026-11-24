@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase.js'
 import { useCatalogo } from '../lib/useCatalogo.js'
 import { interpretarPlanilla } from '../lib/sincronizacion.js'
 import { fechaCorta, pesos } from '../lib/formato.js'
+import { URL_PLANILLA } from '../lib/planilla.js'
 
 const POR_LOTE = 200       // filas por insert
 const MOSTRAR = 50         // filas nuevas que se listan antes de "ver todas"
@@ -90,6 +91,7 @@ export default function Sincronizar() {
     <section>
       <div className="encabezado">
         <h2>Sincronizar con la planilla</h2>
+        <a className="boton secundario" href={URL_PLANILLA} target="_blank" rel="noopener noreferrer">Abrir planilla ↗</a>
       </div>
 
       {(estado === 'inicial' || estado === 'leyendo') && (
@@ -118,7 +120,9 @@ export default function Sincronizar() {
           {conError.length > 0 && (
             <div className="tarjeta">
               <h3>Filas con error (no se importan)</h3>
-              <p className="vacio">Corregilas en la planilla y volvé a leer.</p>
+              <p className="vacio">
+                Corregilas en la <a href={URL_PLANILLA} target="_blank" rel="noopener noreferrer">planilla</a> y volvé a leer.
+              </p>
               <ul className="errores">
                 {conError.map((f) => (
                   <li key={f.nroFila}><strong>Fila {f.nroFila}:</strong> {f.errores.join(' · ')}</li>

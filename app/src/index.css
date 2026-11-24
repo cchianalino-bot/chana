@@ -54,7 +54,7 @@ button, .boton {
   background: var(--primario); color: var(--primario-texto); cursor: pointer; text-decoration: none;
 }
 button:disabled { opacity: .6; cursor: default; }
-button.secundario { background: transparent; color: var(--texto); border-color: var(--borde); }
+button.secundario, .boton.secundario { background: transparent; color: var(--texto); border-color: var(--borde); }
 button.peligro { background: transparent; color: var(--gasto); border-color: var(--gasto); margin-right: auto; }
 
 /* Estructura */
@@ -191,3 +191,6 @@ progress { width: 100%; height: .8rem; }
 .editor-fila small { display: block; color: var(--suave); margin-top: .15rem; }
 .editor-form { display: flex; flex-direction: column; gap: .75rem; }
 .editor-campos { display: grid; grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr)); gap: .75rem; align-items: end; }
+
+.encabezado-acciones { display: flex; align-items: center; gap: .75rem; flex-wrap: wrap; }
+a { color: var(--primario); }

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { supabase } from '../lib/supabase.js'
 import { hoy, inicioDeMes, nombreMes, pesos } from '../lib/formato.js'
 import SelectorMes from '../componentes/SelectorMes.jsx'
+import { URL_PLANILLA } from '../lib/planilla.js'
 
 export default function Inicio() {
   const [mes, setMes] = useState(inicioDeMes(hoy()))
@@ -38,7 +39,10 @@ export default function Inicio() {
     <section>
       <div className="encabezado">
         <h2>Resumen</h2>
-        <SelectorMes mes={mes} onChange={setMes} />
+        <div className="encabezado-acciones">
+          <SelectorMes mes={mes} onChange={setMes} />
+          <a className="boton secundario" href={URL_PLANILLA} target="_blank" rel="noopener noreferrer">Abrir planilla ↗</a>
+        </div>
       </div>
 
       {resumen && (
