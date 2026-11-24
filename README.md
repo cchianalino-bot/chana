@@ -55,6 +55,7 @@ Es la que lee el botón **Sincronizar**. Una fila por movimiento:
 ## Estructura del repo
 
 ```
+app/            app web (React + Vite) para Cloudflare Pages
 supabase/
   migrations/   esquema de la base (tablas, cuotas, vistas, seguridad)
   seed.sql      grupos, subgrupos y medios de pago iniciales
@@ -89,12 +90,14 @@ cuotas, totales y permisos.
 
 1. Crear un proyecto nuevo en Supabase.
 2. Ejecutar `supabase/migrations/*.sql` y después `supabase/seed.sql` en el SQL Editor.
-3. Crear los usuarios de Meli y Carli en *Authentication → Users*.
-4. Darles acceso:
+3. Crear los usuarios de Meli y Carli en *Authentication → Users → Add user*
+   (con contraseña y "Auto Confirm User" tildado).
+4. Darles acceso, con los mails con los que se crearon:
    ```sql
-   insert into public.miembros (user_id, nombre) values
-       ('<uuid de Meli>', 'Meli'),
-       ('<uuid de Carli>', 'Carli');
+   insert into public.miembros (user_id, nombre)
+   select id, 'Carli' from auth.users where email = '<mail de Carli>'
+   union all
+   select id, 'Meli'  from auth.users where email = '<mail de Meli>';
    ```
 
 ## Próximos pasos
@@ -102,7 +105,8 @@ cuotas, totales y permisos.
 - [x] Esquema de base de datos, cuotas y seguridad
 - [x] Migración de la planilla histórica
 - [x] Crear la hoja "Movimientos" en Google Sheets con el historial migrado (Drive: carpeta "Chana · Finanzas familiares")
-- [ ] Frontend: login, movimientos, formulario con cuotas
+- [x] Esquema y datos iniciales cargados en Supabase
+- [x] Frontend: login, resumen del mes, movimientos, formulario con cuotas
 - [ ] Sincronizar desde Google Sheets (vista previa + confirmar)
 - [ ] Tableros de control
 - [ ] Publicar en Cloudflare Pages
