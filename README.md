@@ -101,7 +101,7 @@ cuotas, totales y permisos.
 
 - [x] Esquema de base de datos, cuotas y seguridad
 - [x] Migración de la planilla histórica
-- [ ] Crear la hoja "Movimientos" en Google Sheets con el historial migrado
+- [x] Crear la hoja "Movimientos" en Google Sheets con el historial migrado (Drive: carpeta "Chana · Finanzas familiares")
 - [ ] Frontend: login, movimientos, formulario con cuotas
 - [ ] Sincronizar desde Google Sheets (vista previa + confirmar)
 - [ ] Tableros de control
