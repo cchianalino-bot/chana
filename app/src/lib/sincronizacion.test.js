@@ -1,6 +1,6 @@
 import { test } from 'node:test'
 import assert from 'node:assert/strict'
-import { interpretarPlanilla, leerFecha, leerMonto, serialAFecha } from './sincronizacion.js'
+import { buscarParecidos, interpretarPlanilla, leerFecha, leerMonto, serialAFecha } from './sincronizacion.js'
 
 const catalogo = {
   grupos: [
@@ -95,6 +95,15 @@ test('quién se compara sin mayúsculas y se guarda como está en personas', asy
   assert.equal(r.registro.quien, 'Meli')
 })
 
+test('renombrar una persona no cambia la huella', async () => {
+  const fila = (quien) => [NOV_24, 'Gasto', 'Auto', 'Nafta', 'YPF', 30000, '', '', '', quien]
+  const [antes] = await interpretarPlanilla([fila('Meli')], catalogo)
+  const renombrado = { ...catalogo, personas: [{ id: 1, nombre: 'Melisa' }, ...catalogo.personas.slice(1)] }
+  const [despues] = await interpretarPlanilla([fila('Melisa')], renombrado)
+  assert.equal(despues.registro.quien, 'Melisa')
+  assert.equal(despues.huella, antes.huella)
+})
+
 test('dos filas idénticas son dos movimientos con huellas distintas y estables', async () => {
   const fila = [NOV_24, 'Gasto', 'Auto', 'Nafta', 'YPF', 30000, '', '', 'Efectivo', 'Carli']
   const primera = await interpretarPlanilla([fila, [], fila], catalogo)
@@ -105,4 +114,21 @@ test('dos filas idénticas son dos movimientos con huellas distintas y estables'
   // Leer de nuevo la misma planilla da las mismas huellas: no se duplica.
   const segunda = await interpretarPlanilla([fila, [], fila], catalogo)
   assert.deepEqual(segunda.map((r) => r.huella), primera.map((r) => r.huella))
+})
+
+test('buscarParecidos: misma fecha y monto, o misma fecha y concepto', async () => {
+  const filas = await interpretarPlanilla([
+    [NOV_24, 'Gasto', 'Auto', 'Nafta', 'YPF Ruta 9', 30000, '', '', '', ''],     // mismo monto que uno cargado
+    [NOV_24, 'Gasto', 'Comida', 'Verdulería', 'la huerta', 9100, '', '', '', ''], // mismo concepto, monto corregido
+    [NOV_24, 'Gasto', 'Comida', 'Verdulería', 'Otra cosa', 777, '', '', '', ''],  // nada parecido
+    [46351, 'Gasto', 'Auto', 'Nafta', 'YPF', 30000, '', '', '', ''],              // otro día
+  ], catalogo)
+  const existentes = [
+    { id: 1, fecha: '2026-11-24', concepto: 'YPF', monto: '30000.00', origen: 'formulario' },
+    { id: 2, fecha: '2026-11-24', concepto: 'La Huerta', monto: '8500.00', origen: 'planilla' },
+  ]
+  const parecidos = buscarParecidos(filas, existentes)
+  assert.deepEqual([...parecidos.keys()], [2, 3])
+  assert.deepEqual(parecidos.get(2).map((m) => m.id), [1])
+  assert.deepEqual(parecidos.get(3).map((m) => m.id), [2])
 })

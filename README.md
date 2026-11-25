@@ -49,8 +49,23 @@ Es la que lee el botón **Sincronizar**. Una fila por movimiento:
 - **Cuotas** vacío = un solo pago.
 - **Mes 1ra cuota** vacío = el mes siguiente a la fecha si se pagó con tarjeta
   (cae en el próximo resumen); si no, el mes de la fecha.
-- Al sincronizar, la app muestra una vista previa (nuevo / ya existe / con error)
-  y recién guarda cuando se confirma.
+- Al sincronizar, la app muestra una vista previa (nueva / posible duplicado /
+  ya importada / con error) y recién guarda cuando se confirma.
+
+### Cómo evita importar dos veces lo mismo
+
+- Cada fila tiene una **huella**: un hash de sus datos (fecha, tipo, ids de grupo,
+  subgrupo, medio y persona, concepto normalizado, monto, cuotas y mes de la 1ra
+  cuota) más el número de repetición entre filas idénticas. Se guarda en
+  `movimientos.huella` (única). Si ya existe, la fila es "ya importada".
+- No depende del número de fila: se puede ordenar o insertar filas. Renombrar
+  grupos, subgrupos, medios o personas en Ajustes tampoco la cambia.
+- Si se **corrige** en la planilla una fila ya importada, su huella cambia. Para
+  eso está el aviso de **posible duplicado**: una fila nueva con la misma fecha y
+  el mismo monto (o el mismo concepto) que un movimiento ya cargado, por la
+  planilla o por el formulario, no se importa salvo que se la marque.
+- Regla de uso: en la planilla solo se agregan filas; lo ya importado se corrige
+  o se borra en la app.
 
 ## Estructura del repo
 

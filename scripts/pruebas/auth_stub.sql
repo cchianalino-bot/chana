@@ -2,6 +2,9 @@
 -- migraciones en un PostgreSQL local. No se usa en producción.
 create schema if not exists auth;
 
+-- En Supabase las extensiones (pgcrypto, etc.) viven en el esquema "extensions".
+create schema if not exists extensions;
+
 create table if not exists auth.users (
     id uuid primary key default gen_random_uuid()
 );

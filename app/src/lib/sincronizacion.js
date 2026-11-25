@@ -77,7 +77,7 @@ export function indexarCatalogo({ grupos, subgrupos, medios, personas }) {
   const grupoPorNombre = new Map(grupos.map((g) => [clave(g.nombre), g]))
   const subgrupoPorGrupo = new Map(subgrupos.map((s) => [`${s.grupo_id}|${clave(s.nombre)}`, s]))
   const medioPorNombre = new Map(medios.map((m) => [clave(m.nombre), m]))
-  const personaPorNombre = new Map(personas.map((p) => [clave(p.nombre), p.nombre]))
+  const personaPorNombre = new Map(personas.map((p) => [clave(p.nombre), p]))
   return { grupoPorNombre, subgrupoPorGrupo, medioPorNombre, personaPorNombre }
 }
 
@@ -114,8 +114,8 @@ export function interpretarFila(fila, indices) {
   const m = clave(medio) ? indices.medioPorNombre.get(clave(medio)) : indices.medioPorNombre.get('sin especificar')
   if (!m) errores.push(`Medio de pago "${medio}" no existe`)
 
-  const quienNormal = indices.personaPorNombre.get(clave(quien) || clave(QUIEN_POR_DEFECTO))
-  if (!quienNormal) errores.push(clave(quien) ? `Quién "${quien}" no existe` : 'Falta quién')
+  const persona = indices.personaPorNombre.get(clave(quien) || clave(QUIEN_POR_DEFECTO))
+  if (!persona) errores.push(clave(quien) ? `Quién "${quien}" no existe` : 'Falta quién')
 
   let primerPeriodo = null
   if (mesCuota !== '' && mesCuota != null) {
@@ -137,11 +137,14 @@ export function interpretarFila(fila, indices) {
     monto_es_cuota: false,
     primer_periodo: primerPeriodo,
     medio_pago_id: m.id,
-    quien: quienNormal,
+    quien: persona.nombre,
     origen: 'planilla',
   }
+  // Con los códigos (id) y no los nombres de grupo, subgrupo, medio y persona: así
+  // renombrarlos en Ajustes no cambia la huella. La misma cuenta está replicada en
+  // supabase/migrations/20261126000001_huellas_por_persona.sql.
   const claveFila = [fechaIso, tipoNormal, g.id, s.id, clave(textoConcepto), valor.toFixed(2),
-    cantCuotas, primerPeriodo, m.id, quienNormal].join('|')
+    cantCuotas, primerPeriodo, m.id, persona.id].join('|')
   return { registro, errores, clave: claveFila }
 }
 
@@ -168,4 +171,30 @@ export async function interpretarPlanilla(filas, catalogo) {
     resultado.push({ nroFila: i + 2, fila, registro, errores, huella })
   }
   return resultado
+}
+
+/**
+ * Busca, para cada fila nueva de la planilla, movimientos ya cargados que se le
+ * parezcan: misma fecha y mismo monto, o misma fecha y mismo concepto. Detecta
+ * una fila ya importada que después se corrigió en la planilla (cambia su
+ * huella) y un gasto cargado dos veces, por el formulario y por la planilla.
+ *
+ * nuevas:     filas de interpretarPlanilla que no están importadas
+ * existentes: [{ id, fecha, concepto, monto, origen }] de la tabla movimientos
+ * Devuelve un Map nroFila -> movimientos parecidos (solo las filas con alguno).
+ */
+export function buscarParecidos(nuevas, existentes) {
+  const porFecha = new Map()
+  for (const m of existentes) {
+    if (!porFecha.has(m.fecha)) porFecha.set(m.fecha, [])
+    porFecha.get(m.fecha).push(m)
+  }
+  const parecidos = new Map()
+  for (const f of nuevas) {
+    const { fecha, monto, concepto } = f.registro
+    const candidatos = (porFecha.get(fecha) ?? []).filter((m) =>
+      Math.abs(Number(m.monto) - monto) < 0.005 || clave(m.concepto) === clave(concepto))
+    if (candidatos.length) parecidos.set(f.nroFila, candidatos)
+  }
+  return parecidos
 }
