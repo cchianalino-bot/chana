@@ -49,10 +49,13 @@ export function nombreMes(fecha) {
  * '1234567,5' -> '1.234.567,5'. Los puntos que escribe la persona se ignoran
  * (son separadores de miles); la coma es la única marca decimal.
  */
-export function formatearMontoEscrito(texto) {
+export function formatearMontoEscrito(texto, { limpiarCeros = true } = {}) {
   const limpio = String(texto).replace(/[^\d,]/g, '')
   const [entero, ...resto] = limpio.split(',')
-  const conPuntos = entero.replace(/^0+(?=\d)/, '').replace(/\B(?=(\d{3})+(?!\d))/g, '.')
+  // Mientras se edita no se sacan los ceros de la izquierda: si en "4.000" se borra
+  // el 4 para escribir un 5, tienen que quedar los "000".
+  const sinCeros = limpiarCeros ? entero.replace(/^0+(?=\d)/, '') : entero
+  const conPuntos = sinCeros.replace(/\B(?=(\d{3})+(?!\d))/g, '.')
   if (!limpio.includes(',')) return conPuntos
   return `${conPuntos || '0'},${resto.join('').slice(0, 2)}`
 }
@@ -65,7 +68,11 @@ export function montoEscritoANumero(texto) {
   return Number.isFinite(n) ? n : null
 }
 
-/** 45230.5 -> '45.230,50' (para cargar un monto guardado en el formulario) */
+/**
+ * Para cargar un monto guardado en el formulario: 45230.5 -> '45.230,50',
+ * 4000 -> '4.000' (sin ',00', para que se pueda seguir escribiendo).
+ */
 export function numeroAMontoEscrito(numero) {
-  return formatearMontoEscrito(Number(numero).toFixed(2).replace('.', ','))
+  const texto = Number(numero).toFixed(2).replace(/\.00$/, '').replace('.', ',')
+  return formatearMontoEscrito(texto)
 }

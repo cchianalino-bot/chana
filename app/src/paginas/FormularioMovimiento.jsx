@@ -4,8 +4,9 @@ import { supabase } from '../lib/supabase.js'
 import { useSesion } from '../lib/sesion.jsx'
 import { useCatalogo } from '../lib/useCatalogo.js'
 import { calcularCuotas, primerPeriodoSugerido } from '../lib/cuotas.js'
-import { formatearMontoEscrito, hoy, montoEscritoANumero, nombreMes, numeroAMontoEscrito, pesos } from '../lib/formato.js'
+import { hoy, montoEscritoANumero, nombreMes, numeroAMontoEscrito, pesos } from '../lib/formato.js'
 import Buscador from '../componentes/Buscador.jsx'
+import InputMonto from '../componentes/InputMonto.jsx'
 
 // Lo que cambia según el tipo: título y cómo se llama el medio de pago.
 // Con ingresos e inversiones no se ofrecen tarjetas (y por lo tanto, tampoco cuotas).
@@ -191,14 +192,7 @@ export default function FormularioMovimiento() {
         </label>
         <label>
           Monto
-          <input
-            className="monto-entrada"
-            inputMode="decimal"
-            placeholder="0,00"
-            value={form.monto}
-            onChange={(e) => setForm((f) => ({ ...f, monto: formatearMontoEscrito(e.target.value) }))}
-            required
-          />
+          <InputMonto value={form.monto} onChange={(monto) => setForm((f) => ({ ...f, monto }))} required />
         </label>
       </div>
 
