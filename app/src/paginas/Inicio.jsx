@@ -4,12 +4,15 @@ import { hoy, inicioDeMes, nombreMes, pesos } from '../lib/formato.js'
 import SelectorMes from '../componentes/SelectorMes.jsx'
 import { URL_PLANILLA } from '../lib/planilla.js'
 import DesgloseGrupos from '../componentes/DesgloseGrupos.jsx'
+import { Link } from 'react-router-dom'
+import { fechaCorta } from '../lib/formato.js'
 
 export default function Inicio() {
   const [mes, setMes] = useState(inicioDeMes(hoy()))
   const [resumen, setResumen] = useState(null)
   const [porGrupo, setPorGrupo] = useState([])
   const [compromisos, setCompromisos] = useState([])
+  const [plazos, setPlazos] = useState([])
 
   useEffect(() => {
     supabase.from('v_resumen_mensual').select('*').eq('periodo', mes).maybeSingle()
@@ -23,6 +26,9 @@ export default function Inicio() {
   useEffect(() => {
     supabase.from('v_compromisos_tarjeta').select('*').order('periodo')
       .then(({ data }) => setCompromisos(data ?? []))
+    supabase.from('v_plazos_fijos').select('id, entidad, capital, total, fecha_vencimiento, estado')
+      .in('estado', ['vigente', 'vencido']).order('fecha_vencimiento')
+      .then(({ data }) => setPlazos(data ?? []))
   }, [])
 
   const gastos = porGrupo.filter((f) => f.tipo === 'gasto')
@@ -67,6 +73,31 @@ export default function Inicio() {
           ? <p className="vacio">Sin ingresos en {nombreMes(mes)}.</p>
           : <p className="vacio ayuda">Tocá un grupo para ver el detalle por subgrupo.</p>}
         <DesgloseGrupos filas={ingresos} mes={mes} tipo="ingreso" />
+      </div>
+
+      <div className="tarjeta">
+        <div className="encabezado">
+          <h3>Plazos fijos</h3>
+          <Link to="/plazos-fijos">Ver todos ›</Link>
+        </div>
+        {plazos.length === 0 ? (
+          <p className="vacio">No hay plazos fijos vigentes. <Link to="/plazos-fijos/nuevo">Cargar uno</Link></p>
+        ) : (
+          <ul className="lista-plazos compacta">
+            {plazos.map((p) => (
+              <li key={p.id} className={`plazo plazo-${p.estado}`}>
+                <Link to={p.estado === 'vencido' ? `/plazos-fijos/${p.id}/renovar` : `/plazos-fijos/${p.id}`} className="plazo-datos">
+                  <strong>{p.entidad || 'Plazo fijo'} · {pesos(p.capital)}</strong>
+                  <small>
+                    {p.estado === 'vencido'
+                      ? `Venció el ${fechaCorta(p.fecha_vencimiento)} · tocá para renovar`
+                      : `Vence el ${fechaCorta(p.fecha_vencimiento)} · cobra ${pesos(p.total)}`}
+                  </small>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
 
       <div className="tarjeta">

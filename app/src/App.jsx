@@ -7,6 +7,8 @@ import Movimientos from './paginas/Movimientos.jsx'
 import FormularioMovimiento from './paginas/FormularioMovimiento.jsx'
 import Sincronizar from './paginas/Sincronizar.jsx'
 import Configuracion from './paginas/Configuracion.jsx'
+import PlazosFijos from './paginas/PlazosFijos.jsx'
+import FormularioPlazoFijo from './paginas/FormularioPlazoFijo.jsx'
 
 function Aplicacion() {
   const { sesion, miembro } = useSesion()
@@ -47,6 +49,10 @@ function Aplicacion() {
           <Route path="/movimientos/:id" element={<FormularioMovimiento />} />
           <Route path="/sincronizar" element={<Sincronizar />} />
           <Route path="/configuracion" element={<Configuracion />} />
+          <Route path="/plazos-fijos" element={<PlazosFijos />} />
+          <Route path="/plazos-fijos/nuevo" element={<FormularioPlazoFijo />} />
+          <Route path="/plazos-fijos/:id" element={<FormularioPlazoFijo />} />
+          <Route path="/plazos-fijos/:id/renovar" element={<FormularioPlazoFijo />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </main>

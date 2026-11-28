@@ -129,7 +129,74 @@ end
 $$;
 
 -- -----------------------------------------------------------------------------
--- 4. Seguridad: solo los miembros ven datos
+-- 4. Plazos fijos
+-- -----------------------------------------------------------------------------
+create temp table ids_pf (nombre text primary key, id bigint);
+
+insert into ids_pf
+select 'primero', public.guardar_plazo_fijo(
+    null,
+    (select s.id from public.subgrupos s join public.grupos g on g.id = s.grupo_id
+     where g.nombre = 'Inversiones' and s.nombre = 'Plazos fijos'),
+    'Galicia', 1000000, 36.5, '2027-03-01', '2027-03-31',
+    (select id from public.medios_pago where nombre = 'Transferencia'), 'Carli', null);
+
+select pg_temp.verificar(
+    (select interes = 30000 from public.plazos_fijos where id = (select id from ids_pf where nombre = 'primero')),
+    'interés de $1.000.000 al 36,5% TNA por 30 días = $30.000');
+
+select pg_temp.verificar(
+    (select array_agg(monto order by monto) = array[-1000000, 1030000]::numeric[]
+            and array_agg(concepto order by monto) = array['Plazo fijo Galicia', 'Vencimiento plazo fijo Galicia']
+     from public.movimientos where plazo_fijo_id = (select id from ids_pf where nombre = 'primero')),
+    'genera la salida del capital y la vuelta con intereses');
+
+select pg_temp.verificar(
+    (select inversiones = 30000 from public.v_resumen_mensual where periodo = '2027-03-01'),
+    'en el mes, el neto de inversiones es el interés ganado');
+
+insert into ids_pf
+select 'renovado', public.guardar_plazo_fijo(
+    null, (select subgrupo_id from public.v_plazos_fijos where id = (select id from ids_pf where nombre = 'primero')),
+    'Galicia', 1030000, 30, '2027-03-31', '2027-04-30',
+    (select id from public.medios_pago where nombre = 'Transferencia'), 'Carli', null,
+    (select id from ids_pf where nombre = 'primero'));
+
+select pg_temp.verificar(
+    (select estado = 'renovado' from public.v_plazos_fijos where id = (select id from ids_pf where nombre = 'primero'))
+      and (select renovado_de = (select id from ids_pf where nombre = 'primero')
+           from public.v_plazos_fijos where id = (select id from ids_pf where nombre = 'renovado')),
+    'al renovar, el plazo anterior queda como renovado y el nuevo sabe de cuál viene');
+
+select public.guardar_plazo_fijo(
+    (select id from ids_pf where nombre = 'renovado'),
+    (select subgrupo_id from public.v_plazos_fijos where id = (select id from ids_pf where nombre = 'renovado')),
+    'Galicia', 1030000, 40, '2027-03-31', '2027-04-30', null, 'Carli', null);
+
+select pg_temp.verificar(
+    (select count(*) = 2 and max(monto) = 1030000 + round(1030000 * 0.40 * 30 / 365, 2)
+     from public.movimientos where plazo_fijo_id = (select id from ids_pf where nombre = 'renovado')),
+    'al editar la tasa se regeneran los dos movimientos con el interés nuevo');
+
+delete from public.plazos_fijos where id = (select id from ids_pf where nombre = 'primero');
+select pg_temp.verificar(
+    not exists (select 1 from public.movimientos where plazo_fijo_id = (select id from ids_pf where nombre = 'primero'))
+      and (select renovado_de is null from public.v_plazos_fijos where id = (select id from ids_pf where nombre = 'renovado')),
+    'al borrar un plazo se borran sus movimientos y el renovado queda suelto');
+
+do $$
+begin
+    perform public.guardar_plazo_fijo(null, 1, 'X', 1000, 30, '2027-05-01', '2027-04-01', null, 'Carli', null);
+    raise exception 'FALLÓ: se aceptó un vencimiento anterior al inicio';
+exception when check_violation then
+    raise notice 'ok · no acepta un vencimiento anterior a la fecha de inicio';
+end
+$$;
+
+delete from public.plazos_fijos;
+
+-- -----------------------------------------------------------------------------
+-- 5. Seguridad: solo los miembros ven datos
 -- -----------------------------------------------------------------------------
 set role authenticated;
 
@@ -137,6 +204,7 @@ do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000
 select pg_temp.verificar((select count(*) = 0 from public.movimientos), 'un usuario que no es miembro no ve movimientos');
 select pg_temp.verificar((select count(*) = 0 from public.v_resumen_mensual), 'ni los tableros');
 select pg_temp.verificar((select count(*) = 0 from public.personas), 'ni las personas');
+select pg_temp.verificar((select count(*) = 0 from public.v_plazos_fijos), 'ni los plazos fijos');
 
 do $$ begin perform set_config('request.jwt.claim.sub', '00000000-0000-0000-0000-00000000000a', false); end $$;
 select pg_temp.verificar((select count(*) > 0 from public.movimientos), 'un miembro ve los movimientos');
@@ -146,6 +214,14 @@ select '2027-01-05', id, 'Prueba desde la app', 12000, 2, '2027-01-01' from publ
 select pg_temp.verificar(
     (select count(*) = 2 from public.v_imputaciones where concepto = 'Prueba desde la app'),
     'un miembro carga un gasto en cuotas y se generan las imputaciones');
+
+-- (en dos consultas: lo que inserta la función se ve recién en la siguiente)
+select public.guardar_plazo_fijo(null, (select id from public.subgrupos where nombre = 'Plazos fijos'),
+    'Nación', 500000, 30, '2027-06-01', '2027-07-01', null, 'Carli', null);
+select pg_temp.verificar(
+    (select count(*) = 2 from public.v_imputaciones
+     where concepto in ('Plazo fijo Nación', 'Vencimiento plazo fijo Nación')),
+    'un miembro carga un plazo fijo');
 
 reset role;
 

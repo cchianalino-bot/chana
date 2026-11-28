@@ -33,7 +33,10 @@ export default function Movimientos() {
     <section>
       <div className="encabezado">
         <h2>Movimientos</h2>
-        <Link className="boton" to="/movimientos/nuevo">+ Nuevo</Link>
+        <div className="encabezado-acciones">
+          <Link className="boton secundario" to="/plazos-fijos">Plazos fijos</Link>
+          <Link className="boton" to="/movimientos/nuevo">+ Nuevo</Link>
+        </div>
       </div>
 
       <div className="filtros">

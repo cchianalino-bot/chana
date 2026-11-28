@@ -126,5 +126,6 @@ cuotas, totales y permisos.
 - [x] Cuenta de servicio de Google cargada como secret en Cloudflare
 - [x] Importar el historial (1.272 movimientos) con Sincronizar
 - [x] Ajustes: CRUD de grupos, subgrupos, medios de pago y personas
+- [x] Plazos fijos: interés por TNA, vuelta automática al vencimiento y renovación
 - [ ] Tableros de control
 - [x] Publicar en Cloudflare: https://chana.cchianalino.workers.dev

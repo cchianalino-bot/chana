@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { Link, useNavigate, useParams } from 'react-router-dom'
 import { supabase } from '../lib/supabase.js'
 import { useSesion } from '../lib/sesion.jsx'
 import { useCatalogo } from '../lib/useCatalogo.js'
@@ -62,6 +62,8 @@ export default function FormularioMovimiento() {
       .single()
       .then(({ data, error }) => {
         if (error) return setError('No se encontró el movimiento.')
+        // Los movimientos de un plazo fijo se editan desde el plazo (capital, tasa y vencimiento juntos).
+        if (data.plazo_fijo_id) return navegar(`/plazos-fijos/${data.plazo_fijo_id}`, { replace: true })
         setForm({
           tipo: data.subgrupos.grupos.tipo,
           fecha: data.fecha,
@@ -79,7 +81,7 @@ export default function FormularioMovimiento() {
           notas: data.notas ?? '',
         })
       })
-  }, [id, cargando])
+  }, [id, cargando, navegar])
 
   const tipo = TIPOS[form.tipo]
   const gruposDelTipo = grupos.filter((g) => g.tipo === form.tipo)
@@ -233,6 +235,13 @@ export default function FormularioMovimiento() {
           />
         </label>
       </div>
+
+      {form.tipo === 'inversion' && subgrupos.find((x) => String(x.id) === form.subgrupoId)?.nombre.toLowerCase() === 'plazos fijos' && (
+        <p className="vacio ayuda">
+          Para que calcule los intereses y registre la vuelta de la plata al vencimiento,
+          cargalo desde <Link to="/plazos-fijos/nuevo">Plazos fijos</Link>.
+        </p>
+      )}
 
       <label>
         Concepto
