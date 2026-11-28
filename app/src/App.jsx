@@ -9,6 +9,7 @@ import Sincronizar from './paginas/Sincronizar.jsx'
 import Configuracion from './paginas/Configuracion.jsx'
 import PlazosFijos from './paginas/PlazosFijos.jsx'
 import FormularioPlazoFijo from './paginas/FormularioPlazoFijo.jsx'
+import { IconoAjustes, IconoMovimientos, IconoPlanilla, IconoPlazos, IconoResumen } from './componentes/Iconos.jsx'
 
 function Aplicacion() {
   const { sesion, miembro } = useSesion()
@@ -31,11 +32,13 @@ function Aplicacion() {
     <>
       <header className="cabecera">
         <strong>Finanzas</strong>
-        <nav>
-          <NavLink to="/" end>Resumen</NavLink>
-          <NavLink to="/movimientos">Movimientos</NavLink>
-          <NavLink to="/sincronizar">Sincronizar</NavLink>
-          <NavLink to="/configuracion">Ajustes</NavLink>
+        {/* En el celular este menú pasa a ser una barra de pestañas abajo (ver index.css) */}
+        <nav className="menu">
+          <NavLink to="/" end><IconoResumen /><span>Resumen</span></NavLink>
+          <NavLink to="/movimientos"><IconoMovimientos /><span>Movimientos</span></NavLink>
+          <NavLink to="/plazos-fijos"><IconoPlazos /><span>Plazos</span></NavLink>
+          <NavLink to="/sincronizar"><IconoPlanilla /><span>Planilla</span></NavLink>
+          <NavLink to="/configuracion"><IconoAjustes /><span>Ajustes</span></NavLink>
         </nav>
         <button type="button" className="secundario" onClick={() => supabase.auth.signOut()}>
           Salir ({miembro})

@@ -63,7 +63,8 @@ button.peligro { background: transparent; color: var(--gasto); border-color: var
   padding: .6rem 1rem; background: var(--superficie); border-bottom: 1px solid var(--borde);
 }
 .cabecera nav { display: flex; gap: .25rem; flex: 1; }
-.cabecera nav a { padding: .4rem .7rem; border-radius: 6px; color: var(--suave); text-decoration: none; }
+.cabecera nav a { display: flex; align-items: center; gap: .4rem; padding: .4rem .7rem; border-radius: 6px; color: var(--suave); text-decoration: none; }
+.cabecera nav a svg { width: 18px; height: 18px; }
 .cabecera nav a.active { background: var(--acento); color: var(--texto); font-weight: 600; }
 .cabecera > button { padding: .35rem .7rem; font-size: .9rem; }
 .contenido { max-width: 820px; margin: 0 auto; padding: 1rem; }
@@ -156,8 +157,20 @@ th:first-child, td:first-child { text-align: left; text-transform: capitalize; }
 
 @media (max-width: 640px) {
   .cabecera > strong { flex: 1; }
-  .cabecera nav { order: 3; flex-basis: 100%; justify-content: space-between; overflow-x: auto; gap: 0; }
-  .cabecera nav a { padding: .4rem .45rem; white-space: nowrap; font-size: .92rem; }
+  /* Barra de pestañas fija abajo, como en las apps del teléfono */
+  .cabecera nav {
+    position: fixed; z-index: 20; left: 0; right: 0; bottom: 0;
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 0;
+    padding: .3rem .25rem calc(.3rem + env(safe-area-inset-bottom));
+    background: var(--superficie); border-top: 1px solid var(--borde);
+  }
+  .cabecera nav a {
+    flex-direction: column; gap: .15rem; padding: .35rem 0; border-radius: 8px;
+    font-size: .7rem; white-space: nowrap;
+  }
+  .cabecera nav a svg { width: 22px; height: 22px; }
+  .cabecera nav a.active { background: transparent; color: var(--primario); }
+  .contenido { padding-bottom: calc(5.5rem + env(safe-area-inset-bottom)); }
   th, td { padding: .4rem .3rem; font-size: .9rem; }
   .indicadores { grid-template-columns: 1fr 1fr; }
   .fila { grid-template-columns: 1fr; }
